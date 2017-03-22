@@ -10,7 +10,7 @@ output:
 ```{r setup, echo=FALSE, warning=FALSE, purl=FALSE, message=FALSE}
 library(knitr)
 options(repos="http://cran.rstudio.com/")
-pkgs <- c("sf", "raster", "dplyr")
+pkgs <- c("sf", "raster", "dplyr","rgdal")
 x<-lapply(pkgs, library, character.only = TRUE)
 opts_chunk$set(tidy=F, root.dir = ".", cach=TRUE)
 ```
@@ -21,16 +21,16 @@ Also as an aside, I am learning the `sf` package right now so, we will be learni
 
 # The `sf` package
 
-Things are changing quickly in the R/spatial analysis world and the most fundamental change is via the `sf` package.  This package aims to replace `sp`, `rgdal`, and `rgeos`.  There are a lot of reasons why this is a good thing, but that is a bit beyond the scope of this tutorial.  Suffice it to say it should make things faster and simpler!
+Things are changing quickly in the R/spatial analysis world and the most fundamental change is via the `sf` package.  This package aims to replace `sp`, `rgdal`, and `rgeos`.  There are a lot of reasons why this is a good thing, but that is a bit beyond the scope of this workshop  Suffice it to say it should make things faster and simpler!
 
-To install `sf`:
+To get started, lets get `sf installed:
 
 ```{r, eval=FALSE}
 install.packages("sf")
 library("sf")
 ```
 
-## Simple Features 
+It does rely on having access the GDAL, GEOS, and Proj.4 libraries.  On Windows and Mac this should be pretty straightforward.
 
 ## Exercise 1
 The first exercise won't be too thrilling, but we need to make sure everyone has the packages installed. 
@@ -42,18 +42,57 @@ The first exercise won't be too thrilling, but we need to make sure everyone has
 
 # Reading in spatial data with `sf`
 
+## Simple Features 
+So, what does `sf` actually provide us?  It is an implementation of an ISO standard for storing spatial data.  It forms the basis for many of the common vector data models and is centered on the concept of a "feature".  Essentially a feature is any object in the real world.  There are many different types of features and there are different details that get stored about each. For details on this the [first `sf` vignette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html) does a really nice job.  For this mini-workshop we are going to focus on three feature types, POINT, MULTILINESTRING, and MULTIPOLYGON.  
+
+For each of the types, there will be coordinates stored as dimensions, a coordinate reference system, and attributes.  
 
 ## Get some data to use
 
-## Read in points
-```{r}
-sf_rand <- st_read("rand.shp")
+We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  
+
+```{r, eval = FALSE}
+# Municipal Boundaries
+download.file(url = "http://www.rigis.org/geodata/bnd/muni97d.zip",
+              destfile = "data/muni97d.zip")
+unzip(zipfile = "data/muni97d.zip", 
+      exdir = "data")
+
+# Streams
+download.file(url = "http://www.rigis.org/geodata/hydro/streams.zip",
+              destfile = "data/streams.zip")
+unzip(zipfile = "data/streams.zip", 
+      exdir = "data")
+
+# Potential Growth Centers
+download.file(url = "http://www.rigis.org/geodata/plan/growth06.zip",
+              destfile = "data/growth06.zip")
+unzip(zipfile = "data/growth06.zip", 
+      exdir = "data")
+
+# Land Use/Land Cover
+download.file(url = "http://www.rigis.org/geodata/plan/rilc11d.zip",
+              destfile = "data/rilc11d.zip")
+unzip(zipfile = "data/rilc11d.zip", 
+      exdir = "data")
 ```
 
-## Read in lines
+## Read in POINT
+```{r}
+growth_cent <- st_read("data/growth06.shp")
+```
 
-## Read in polygons
+## Read in LINESTRING
 
+```{r}
+streams <- st_read("data/streams.shp")
+```
+
+
+## Read in POLYGON
+```{r}
+muni <- st_read("data/muni97d.shp")
+```
 
 ## Performance
 
@@ -63,10 +102,10 @@ One of the benefits of using `sf` is the speed.  In my tests it is about twice a
 
 ```{r}
 #The old way
-system.time(readOGR(".","big"))
+system.time(readOGR("data","big"))
 
 #The sf way
-system.time(st_read("big.shp"))
+system.time(st_read("data/big.shp"))
 ```
 
 ## Exercise 2
