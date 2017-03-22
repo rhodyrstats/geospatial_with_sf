@@ -1,0 +1,98 @@
+---
+title: "Spatial analysis in R with the `sf` package"
+fig_caption: false
+output:
+  md_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, echo=FALSE, warning=FALSE, purl=FALSE, message=FALSE}
+library(knitr)
+options(repos="http://cran.rstudio.com/")
+pkgs <- c("sf", "raster", "dplyr")
+x<-lapply(pkgs, library, character.only = TRUE)
+opts_chunk$set(tidy=F, root.dir = ".", cach=TRUE)
+```
+
+In this mini-workshop we will introduce the `sf` package, show some examples of geospatial analysis, work with base plotting of `sf` objects, and show how `mapview` can be used to map these objects. It is assumed that you have [R and RStudio installed](https://github.com/rhodyrstats/intro_r_workshop#software) and that you, at a minimum, understand the basic concepts of the R language (e.g. you can work through[R For Cats](https://rforcats.net)).
+
+Also as an aside, I am learning the `sf` package right now so, we will be learning all of this together!
+
+# The `sf` package
+
+Things are changing quickly in the R/spatial analysis world and the most fundamental change is via the `sf` package.  This package aims to replace `sp`, `rgdal`, and `rgeos`.  There are a lot of reasons why this is a good thing, but that is a bit beyond the scope of this tutorial.  Suffice it to say it should make things faster and simpler!
+
+To install `sf`:
+
+```{r, eval=FALSE}
+install.packages("sf")
+library("sf")
+```
+
+## Simple Features 
+
+## Exercise 1
+The first exercise won't be too thrilling, but we need to make sure everyone has the packages installed. 
+
+1. Install `sf`.
+2. Load `sf`.
+3. If you don't have `dplyr` already, make sure it is installed.
+4. Load `dplyr`.
+
+# Reading in spatial data with `sf`
+
+
+## Get some data to use
+
+## Read in points
+```{r}
+sf_rand <- st_read("rand.shp")
+```
+
+## Read in lines
+
+## Read in polygons
+
+
+## Performance
+
+One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast.  Let's look at a biggish shape file with 1 million points!
+
+![1 million points](https://media4.giphy.com/media/13B1WmJg7HwjGU/giphy.gif)
+
+```{r}
+#The old way
+system.time(readOGR(".","big"))
+
+#The sf way
+system.time(st_read("big.shp"))
+```
+
+## Exercise 2
+
+1. Read in shapefiles with 
+
+# Basics of `sf` objects
+
+## Its a data.frame!
+
+## Manipulate `sf` objects with `dplyr`, yes, `dplyr`!
+
+## Exercise 3
+
+# Plotting
+
+## Base
+
+## Mapview
+
+## Exercise 4
+
+# Analysis
+
+## Buffer and summarize
+
+## Exercise 5
+
+
