@@ -110,7 +110,7 @@ One of the benefits of using `sf` is the speed.  In my tests it is about twice a
 
 ![1 million points](https://media4.giphy.com/media/13B1WmJg7HwjGU/giphy.gif)
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 #The old way
 system.time(rgdal::readOGR("data","big"))
 
