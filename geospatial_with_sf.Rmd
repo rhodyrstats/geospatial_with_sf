@@ -48,7 +48,7 @@ So, what does `sf` actually provide us?  It is an implementation of an ISO stand
 
 ## Get some data to use
 
-We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  
+We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  This code assumes you have a `data` folder in your current workspace.
 
 ```{r, eval = FALSE}
 # Municipal Boundaries
@@ -100,10 +100,9 @@ streams <- st_read("data/streams.shp")
 muni <- st_read("data/muni97d.shp")
 ```
 
-## Data Structure
-
-One of the nicest features (pun intended) about `sf` objects is that they are nothin more than data frames.  The data for each features (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
-
+```{r}
+lulc <- st_read("data/rilc11d.shp")
+```
 ## A word on performance
 
 One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast as the prior standard of `sp` and `rgdal`.  Let's look at a biggish shape file with 1 million points!
@@ -124,15 +123,52 @@ system.time(st_read("data/big.shp"))
 
 # Basics of `sf` objects
 
-## Its a data.frame!
+One of the nicest features (pun intended) about `sf` objects is that they are nothing more than data frames.  The data for each feature (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is a "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
+
+We can use many of our base R skills directly with these objects.
+
+```{r}
+head(muni)
+streams$NAME[1:10]
+str(growth_cent)
+```
 
 ## Manipulate `sf` objects with `dplyr`, yes, `dplyr`!
 
+However, what is truly awesome, is the ability for us to now use `dplyr` to manipulate our spatial data and pipe our spatial workflows.  First let's make sure `dplyr` is loaded up.
+
+```{r}
+library("dplyr")
+```
+
+Now we can work with our spatial data.  Let's filter out the towns that are more than 
+
+```{r}
+big_muni <- muni %>%
+  mutate(area_skm = AREA*.000000092903) %>%
+  group_by(NAME) %>%
+  summarize(sum_area_skm = sum(area_skm)) %>%
+  filter(sum_area_skm >= 100)
+big_muni
+```
+
+And first time I tried this, this happened:
+
+![mind_blown](https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif)
+
 ## Exercise 3
 
+Let's try the same thing with our land use/land cover data, except without the filter.  Use `dplyr` and
+
+1. Add a column to convert area from acres to square kilometers
+2. Group by LULC_2011
+3. Sum up the square kilometers
+
 # Plotting
+There are default plotting methods for these sf objects, so we can use our base plotting tools to create some quick maps. 
 
 ## Base
+plot(muni$geometry, col = muni$COUNTY)
 
 ## Mapview
 
