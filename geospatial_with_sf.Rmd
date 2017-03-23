@@ -2,8 +2,9 @@
 title: "Spatial analysis in R with the `sf` package"
 fig_caption: false
 output:
-  md_document:
+  html_document:
     toc: true
+    toc_float: true
     toc_depth: 2
 ---
 
@@ -43,9 +44,7 @@ The first exercise won't be too thrilling, but we need to make sure everyone has
 # Reading in spatial data with `sf`
 
 ## Simple Features 
-So, what does `sf` actually provide us?  It is an implementation of an ISO standard for storing spatial data.  It forms the basis for many of the common vector data models and is centered on the concept of a "feature".  Essentially a feature is any object in the real world.  There are many different types of features and there are different details that get stored about each. For details on this the [first `sf` vignette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html) does a really nice job.  For this mini-workshop we are going to focus on three feature types, POINT, MULTILINESTRING, and MULTIPOLYGON.  
-
-For each of the types, there will be coordinates stored as dimensions, a coordinate reference system, and attributes.  
+So, what does `sf` actually provide us?  It is an implementation of an ISO standard for storing spatial data.  It forms the basis for many of the common vector data models and is centered on the concept of a "feature".  Essentially a feature is any object in the real world.  There are many different types of features and there are different details that get stored about each. For details on this the [first `sf` vignette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html) does a really nice job.  For this mini-workshop we are going to focus on three feature types, POINT, LINESTRING, and POLYGON.  For each of the types, there will be coordinates stored as dimensions, a coordinate reference system, and attributes.  
 
 ## Get some data to use
 
@@ -77,32 +76,43 @@ unzip(zipfile = "data/rilc11d.zip",
       exdir = "data")
 ```
 
-## Read in POINT
+
+## Data input
+
+To pull the shapefiles in we can simply use the `st_read()` function.  This will create an object which is a simple feature collection of, in our case, POINT, LINESTRING, or POLYGON.  As an aside, many of the `sf` functions and all of the ones we will be using start with `st_`.  This stands for "spatial" and "temporal".  Take a look below for examples reading in each of our datasets.
+
+### POINT
+
 ```{r}
 growth_cent <- st_read("data/growth06.shp")
 ```
 
-## Read in LINESTRING
+### LINESTRING
 
 ```{r}
 streams <- st_read("data/streams.shp")
 ```
 
 
-## Read in POLYGON
+### POLYGON
+
 ```{r}
 muni <- st_read("data/muni97d.shp")
 ```
 
-## Performance
+## Data Structure
 
-One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast.  Let's look at a biggish shape file with 1 million points!
+One of the nicest features (pun intended) about `sf` objects is that they are nothin more than data frames.  The data for each features (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
+
+## A word on performance
+
+One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast as the prior standard of `sp` and `rgdal`.  Let's look at a biggish shape file with 1 million points!
 
 ![1 million points](https://media4.giphy.com/media/13B1WmJg7HwjGU/giphy.gif)
 
-```{r}
+```{r, eval=FALSE}
 #The old way
-system.time(readOGR("data","big"))
+system.time(rgdal::readOGR("data","big"))
 
 #The sf way
 system.time(st_read("data/big.shp"))
@@ -110,7 +120,7 @@ system.time(st_read("data/big.shp"))
 
 ## Exercise 2
 
-1. Read in shapefiles with 
+1. Make sure each of the shapefiles is read in.  Follow the instructions from above to complete this.  
 
 # Basics of `sf` objects
 
