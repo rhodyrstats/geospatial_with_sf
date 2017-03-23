@@ -6,17 +6,18 @@ output:
     toc: true
     toc_float: true
     toc_depth: 2
+    
 ---
 
 ```{r setup, echo=FALSE, warning=FALSE, purl=FALSE, message=FALSE}
 library(knitr)
 options(repos="http://cran.rstudio.com/")
-pkgs <- c("sf", "raster", "dplyr","rgdal")
+pkgs <- c("sf", "raster", "dplyr","rgdal","mapview")
 x<-lapply(pkgs, library, character.only = TRUE)
 opts_chunk$set(tidy=F, root.dir = ".", cach=TRUE)
 ```
 
-In this mini-workshop we will introduce the `sf` package, show some examples of geospatial analysis, work with base plotting of `sf` objects, and show how `mapview` can be used to map these objects. It is assumed that you have [R and RStudio installed](https://github.com/rhodyrstats/intro_r_workshop#software) and that you, at a minimum, understand the basic concepts of the R language (e.g. you can work through[R For Cats](https://rforcats.net)).
+In this mini-workshop we will introduce the `sf` package, show some examples of geospatial analysis, work with base plotting of `sf` objects, and show how `mapview` can be used to map these objects. It is assumed that you have [R and RStudio installed](https://github.com/rhodyrstats/intro_r_workshop#software) and that you, at a minimum, understand the basic concepts of the R language (e.g. you can work through [R For Cats](https://rforcats.net)).
 
 Also as an aside, I am learning the `sf` package right now so, we will be learning all of this together!
 
@@ -24,7 +25,7 @@ Also as an aside, I am learning the `sf` package right now so, we will be learni
 
 Things are changing quickly in the R/spatial analysis world and the most fundamental change is via the `sf` package.  This package aims to replace `sp`, `rgdal`, and `rgeos`.  There are a lot of reasons why this is a good thing, but that is a bit beyond the scope of this workshop  Suffice it to say it should make things faster and simpler!
 
-To get started, lets get `sf installed:
+To get started, lets get http://onlinelibrary.wiley.com/doi/10.1111/geb.12569/epdf`sf installed:
 
 ```{r, eval=FALSE}
 install.packages("sf")
@@ -103,6 +104,7 @@ muni <- st_read("data/muni97d.shp")
 ```{r}
 lulc <- st_read("data/rilc11d.shp")
 ```
+
 ## A word on performance
 
 One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast as the prior standard of `sp` and `rgdal`.  Let's look at a biggish shape file with 1 million points!
@@ -123,7 +125,7 @@ system.time(st_read("data/big.shp"))
 
 # Basics of `sf` objects
 
-One of the nicest features (pun intended) about `sf` objects is that they are nothing more than data frames.  The data for each feature (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is a "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
+Perhaps the nicest feature (pun intended) about `sf` objects is that they are nothing more than data frames.  The data for each feature (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is a "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
 
 We can use many of our base R skills directly with these objects.
 
@@ -163,21 +165,79 @@ Let's try the same thing with our land use/land cover data, except without the f
 1. Add a column to convert area from acres to square kilometers
 2. Group by LULC_2011
 3. Sum up the square kilometers
+4. Which land use/land cover class is the biggest?  The smallest?
 
 # Plotting
 There are default plotting methods for these sf objects, so we can use our base plotting tools to create some quick maps. 
 
-## Base
-plot(muni$geometry, col = muni$COUNTY)
+## `sf` plotting methods
 
-## Mapview
+If a dataset has multiple attributes, the default plotting will create a separate plot of each.  Nice for quickly exploring a dataset.  
+
+```{r}
+plot(muni)
+```
+
+And to plot just a single field:
+
+```{r}
+plot(muni$geometry, col = muni$COUNTY)
+```
+
+And to add other layers
+
+```{r}
+plot(muni$geometry)
+plot(streams$geometry, col = "blue", add = TRUE)
+plot(growth_cent$geometry, pch = 19, cex = 1, col = "red", add = TRUE)
+```
+
+That's nice, but if we want to interact with the data we can't do that just yet (I'm planning to add `sf` support to [`quickmapr`](https://cran.r-project.org/package=quickmapr), but haven't yet).  But, we can do that with `mapview` (currently only in the development version)
+
+## `mapview`
+
+If you don't already have `mapview` we need to get it installed and loaded.  This isn't on CRAN yet so we can install with `devtools::install_github()`
+
+```{r, eval = FALSE}
+devtools::install_github("environmentalinformatics-marburg/mapview", ref="develop")
+library("mapview")
+```
+
+And add some of our `sf` objects to a Leaflet map with `mapview`. 
+
+```{r, eval = FALSE}
+mapview(muni) + streams + growth_cent
+```
+(sorry not embedded, was having rendering problems that I didn't have time to solve)
 
 ## Exercise 4
 
+1. Play around with base plotting to plot some of these different `sf` objects.
+
 # Analysis
 
-## Buffer and summarize
+Basic GIS analyses are fully supported in `sf`.  For this introduction we will discuss only one: buffer, clip, and summarize.
+
+## Buffer
+
+To buffer features we will use the `st_buffer()` function.  For our example we will buffer a single point and summarize the land use/land cover around that point.  We can pipe our full workflow together using `%>%`.
+
+```{r}
+wk_lulc_summ <- growth_cent %>%
+  filter(NAME == "WEST KINGSTON") %>%
+  st_buffer(dist = 5280) %>%
+  st_intersection(lulc) %>%
+  group_by(Descr_2011)%>%
+  summarize(area = sum(Acres_2011)) %>%
+  arrange(desc(area))
+wk_lulc_summ
+plot(wk_lulc_summ$geoms, col = wk_lulc_summ$Descr_2011)
+```
+
+Clearly we need to think about our colors some, but the combination of `sf` and `dplyr` for doing GIS types of operations is FANTASTIC and I am now completely:
+
+![in love](https://media.giphy.com/media/26FLdmIp6wJr91JAI/giphy.gif)
 
 ## Exercise 5
-
+Let's get a bit ambitious now.  What is the land use land cover totals within 1 km of the Wood River?
 
