@@ -25,14 +25,14 @@ Also as an aside, I am learning the `sf` package right now so, we will be learni
 
 Things are changing quickly in the R/spatial analysis world and the most fundamental change is via the `sf` package.  This package aims to replace `sp`, `rgdal`, and `rgeos`.  There are a lot of reasons why this is a good thing, but that is a bit beyond the scope of this workshop  Suffice it to say it should make things faster and simpler!
 
-To get started, lets get http://onlinelibrary.wiley.com/doi/10.1111/geb.12569/epdf`sf installed:
+To get started, lets get `sf` installed:
 
 ```{r, eval=FALSE}
 install.packages("sf")
 library("sf")
 ```
 
-It does rely on having access the GDAL, GEOS, and Proj.4 libraries.  On Windows and Mac this should be pretty straightforward.
+`sf` does rely on having access the GDAL, GEOS, and Proj.4 libraries.  On Windows and Mac this should be pretty straightforward if we are installing from CRAN (which we are).  If you use linux, you know nothing is straightforward and you are on your own!
 
 ## Exercise 1
 The first exercise won't be too thrilling, but we need to make sure everyone has the packages installed. 
@@ -45,13 +45,16 @@ The first exercise won't be too thrilling, but we need to make sure everyone has
 # Reading in spatial data with `sf`
 
 ## Simple Features 
-So, what does `sf` actually provide us?  It is an implementation of an ISO standard for storing spatial data.  It forms the basis for many of the common vector data models and is centered on the concept of a "feature".  Essentially a feature is any object in the real world.  There are many different types of features and there are different details that get stored about each. For details on this the [first `sf` vignette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html) does a really nice job.  For this mini-workshop we are going to focus on three feature types, POINT, LINESTRING, and POLYGON.  For each of the types, there will be coordinates stored as dimensions, a coordinate reference system, and attributes.  
+So, what does `sf` actually provide us?  It is an implementation of an ISO standard for storing spatial data.  It forms the basis for many of the common vector data models and is centered on the concept of a "feature".  Essentially a feature is any object in the real world.  There are many different types of features and there are different details that get stored about each. The [first `sf` vignette](https://cran.r-project.org/web/packages/sf/vignettes/sf1.html) does a really nice job of explaining the details.  For this mini-workshop we are going to focus on three feature types, POINT, LINESTRING, and POLYGON.  For each of the types, there will be coordinates stored as dimensions, a coordinate reference system, and attributes.  
 
 ## Get some data to use
 
-We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  This code assumes you have a `data` folder in your current workspace.
+We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  This code assumes you have a `data` folder in your current workspace.  Create one if you need it.
 
 ```{r, eval = FALSE}
+# Create a data folder if it doesn't exist, and yes R can do that
+if(!dir.exists("data")){dir.create("data")}
+
 # Municipal Boundaries
 download.file(url = "http://www.rigis.org/geodata/bnd/muni97d.zip",
               destfile = "data/muni97d.zip")
@@ -76,7 +79,6 @@ download.file(url = "http://www.rigis.org/geodata/plan/rilc11d.zip",
 unzip(zipfile = "data/rilc11d.zip", 
       exdir = "data")
 ```
-
 
 ## Data input
 
@@ -105,6 +107,25 @@ muni <- st_read("data/muni97d.shp")
 lulc <- st_read("data/rilc11d.shp")
 ```
 
+## Other data
+
+We won't have time during this mini-workshop to look at reading in other data formats, but since `sf` uses GDAL it can read all of the files for which you have drivers.  
+
+```{r}
+drvrs <- st_drivers()
+drvrs$long_name
+```
+
+Additionally, you if you have a tabular dataset with coordinates, you can create an sf object with those.  An example using EPA's National Lakes Assessment data:
+
+```{r}
+nla_url <- "https://www.epa.gov/sites/production/files/2016-12/nla2012_wide_siteinfo_08232016.csv"
+nla_stations <- read.csv(nla_url, stringsAsFactors = FALSE)
+nla_sf <- st_as_sf(nla_stations, coords = c("LON_DD83", "LAT_DD83"), crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+```
+
+(HT to [Mike Treglia](https://twitter.com/MikeTreglia) for the suggestion!)
+
 ## A word on performance
 
 One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast as the prior standard of `sp` and `rgdal`.  Let's look at a biggish shape file with 1 million points!
@@ -125,7 +146,7 @@ system.time(st_read("data/big.shp"))
 
 # Basics of `sf` objects
 
-Perhaps the nicest feature (pun intended) about `sf` objects is that they are nothing more than data frames.  The data for each feature (e.g. the attributes in ESRI speak) are stored in the data frames first columns.  The last column of the data frame is a "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
+Perhaps the nicest feature (pun intended) about `sf` objects is that they are nothing more than data frames.  The data for each feature (e.g. the attributes in ESRI speak) are stored in the data frame's first columns.  The last column of the data frame is a "geometry" column which holds the coordinates, and coordinate reference system information.  I say this is nice becuase we don't need to completely learn a new way of working with spatial data.  Much of what we now about working with plain old tabular data frames will also work with `sf` objects.
 
 We can use many of our base R skills directly with these objects.
 
@@ -137,13 +158,13 @@ str(growth_cent)
 
 ## Manipulate `sf` objects with `dplyr`, yes, `dplyr`!
 
-However, what is truly awesome, is the ability for us to now use `dplyr` to manipulate our spatial data and pipe our spatial workflows.  First let's make sure `dplyr` is loaded up.
+However, what is truly awesome, is the we can use `dplyr` to manipulate our spatial data and pipe our spatial workflows.  First let's make sure `dplyr` is loaded up.
 
 ```{r}
 library("dplyr")
 ```
 
-Now we can work with our spatial data.  Let's filter out the towns that are more than 
+Now we can work with our spatial data.  Let's filter out the towns that are more than 100 km^2^:
 
 ```{r}
 big_muni <- muni %>%
@@ -168,7 +189,7 @@ Let's try the same thing with our land use/land cover data, except without the f
 4. Which land use/land cover class is the biggest?  The smallest?
 
 # Plotting
-There are default plotting methods for these sf objects, so we can use our base plotting tools to create some quick maps. 
+There are default plotting methods for `sf` objects, so we can use our base plotting tools to create some quick maps. 
 
 ## `sf` plotting methods
 
@@ -178,7 +199,7 @@ If a dataset has multiple attributes, the default plotting will create a separat
 plot(muni)
 ```
 
-And to plot just a single field:
+And to plot just a single field (might be a better way to do this, but it is what makes the most sense to me right now):
 
 ```{r}
 plot(muni$geometry, col = muni$COUNTY)
@@ -192,7 +213,7 @@ plot(streams$geometry, col = "blue", add = TRUE)
 plot(growth_cent$geometry, pch = 19, cex = 1, col = "red", add = TRUE)
 ```
 
-That's nice, but if we want to interact with the data we can't do that just yet (I'm planning to add `sf` support to [`quickmapr`](https://cran.r-project.org/package=quickmapr), but haven't yet).  But, we can do that with `mapview` (currently only in the development version)
+That's nice, but if we want to interact with the data we can't do that just yet (I'm planning to add `sf` support to [`quickmapr`](https://cran.r-project.org/package=quickmapr)).  That has been added to the development version of `mapview`.
 
 ## `mapview`
 
@@ -208,6 +229,7 @@ And add some of our `sf` objects to a Leaflet map with `mapview`.
 ```{r, eval = FALSE}
 mapview(muni) + streams + growth_cent
 ```
+
 (sorry not embedded, was having rendering problems that I didn't have time to solve)
 
 ## Exercise 4
