@@ -25,3 +25,4 @@ vignettes/*.pdf
 .Rproj.user
 geospatial_with_sf.Rproj
 data
+data.zip

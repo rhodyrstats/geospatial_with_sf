@@ -51,6 +51,47 @@ So, what does `sf` actually provide us?  It is an implementation of an ISO stand
 
 We can grab some data directly from the Rhode Island Geographic Information System (RIGIS) for these examples.  This code assumes you have a `data` folder in your current workspace.  Create one if you need it.
 
+
+```{r, eval = TRUE, echo=FALSE, warning=FALSE}
+# This can take some time!
+
+# Check fo data folder
+if(!dir.exists("data")){
+  dir.create("data")
+}
+
+# Municipal Boundaries
+if(!file.exists("data/muni97d.shp")){
+download.file(url = "http://www.rigis.org/geodata/bnd/muni97d.zip",
+              destfile = "data/muni97d.zip")
+unzip(zipfile = "data/muni97d.zip", 
+      exdir = "data")
+}
+
+# Streams
+if(!file.exists("data/streams.shp")){
+download.file(url = "http://www.rigis.org/geodata/hydro/streams.zip",
+              destfile = "data/streams.zip")
+unzip(zipfile = "data/streams.zip", 
+      exdir = "data")
+}
+# Potential Growth Centers
+if(!file.exists("data/growth06.shp")){
+download.file(url = "http://www.rigis.org/geodata/plan/growth06.zip",
+              destfile = "data/growth06.zip")
+unzip(zipfile = "data/growth06.zip", 
+      exdir = "data")
+}
+# Land Use/Land Cover
+if(!file.exists("data/rilc11d.shp")){
+download.file(url = "http://www.rigis.org/geodata/plan/rilc11d.zip",
+              destfile = "data/rilc11d.zip")
+unzip(zipfile = "data/rilc11d.zip", 
+      exdir = "data")
+}
+```
+
+
 ```{r, eval = FALSE}
 # Create a data folder if it doesn't exist, and yes R can do that
 if(!dir.exists("data")){dir.create("data")}
@@ -131,6 +172,14 @@ nla_sf <- st_as_sf(nla_stations, coords = c("LON_DD83", "LAT_DD83"), crs = "+pro
 One of the benefits of using `sf` is the speed.  In my tests it is about twice as fast as the prior standard of `sp` and `rgdal`.  Let's look at a biggish shape file with 1 million points!
 
 ![1 million points](https://media4.giphy.com/media/13B1WmJg7HwjGU/giphy.gif)
+
+```{r, echo=FALSE, message=FALSE}
+if(!file.exists("data/big.shp")){
+  df <- data.frame(x=rnorm(1000000,-70,2),y=rnorm(1000000,42,2))
+  big <- st_as_sf(df, coords = c("x","y"), crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+  st_write(big,"data/big.shp")
+}
+```
 
 ```{r, eval=TRUE}
 #The old way
